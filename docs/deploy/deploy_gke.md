@@ -8,7 +8,7 @@ deploy Toolbox to [Google Kubernetes Engine][gke].
 
 ## Before you begin
 
-1. [Install](https://cloud.google.com/sdk/docs/install) the Google Cloud CLI.
+1. [Install the `gcloud` CLI](https://cloud.google.com/sdk/docs/install).
 
 1. Set the PROJECT_ID environment variable:
 
@@ -43,13 +43,13 @@ deploy Toolbox to [Google Kubernetes Engine][gke].
 
 ## Create a service account
 
-1. Set environment variables:
+1. Specify a name for your service account with an environment variable:
 
     ```bash
-    export sa_name=toolbox
+    export SA_NAME=toolbox
     ```
 
-1. Create a backend service account if you don't already have one:
+1. Create a backend service account:
 
     ```bash
     gcloud iam service-accounts create $sa_name
@@ -141,7 +141,7 @@ deploy Toolbox to [Google Kubernetes Engine][gke].
 
 1. Create a kubernetes manifest file (`k8s_deployment.yaml`) to build deployment and create service.
 
-    ```bash
+    ```yaml
     apiVersion: apps/v1
     kind: Deployment
     metadata:
