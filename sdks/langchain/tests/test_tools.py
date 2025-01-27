@@ -16,16 +16,12 @@ from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 from pydantic import ValidationError
+from threading import Thread
 
+import asyncio
+from toolbox_langchain_sdk.background_loop import _BackgroundLoop
 from toolbox_langchain_sdk.tools import ToolboxTool
-from toolbox_langchain_sdk.utils import ToolSchema
 
-class MockBackgroundLoop:
-    def run_as_sync(self, func):
-        return func()
-
-    async def run_as_async(self, func):
-        return await func
 
 @pytest.fixture
 def tool_schema():
@@ -67,7 +63,27 @@ async def toolbox_tool(MockClientSession, tool_schema):
         schema=tool_schema,
         url="http://test_url",
         session=mock_session,
-        bg_loop=MockBackgroundLoop(),
+    )
+    yield tool
+
+
+@pytest.fixture
+@patch("aiohttp.ClientSession")
+def sync_toolbox_tool(MockClientSession, tool_schema):
+    mock_session = MockClientSession.return_value
+    mock_session.post.return_value.__aenter__.return_value.raise_for_status = Mock()
+    mock_session.post.return_value.__aenter__.return_value.json = AsyncMock(
+        return_value={"result": "test-result"}
+    )
+    loop = asyncio.new_event_loop()
+    thread = Thread(target=loop.run_forever, daemon=True)
+    thread.start()
+    tool = ToolboxTool(
+        name="test_tool",
+        schema=tool_schema,
+        url="http://test_url",
+        session=mock_session,
+        bg_loop=_BackgroundLoop(loop, thread),
     )
     yield tool
 
@@ -89,7 +105,6 @@ async def auth_toolbox_tool(MockClientSession, auth_tool_schema):
             schema=auth_tool_schema,
             url="https://test-url",
             session=mock_session,
-            bg_loop=MockBackgroundLoop(),
         )
     yield tool
 
@@ -273,11 +288,11 @@ async def test_toolbox_tool_call(toolbox_tool):
         assert result == {"result": "test-result"}
 
 
-# @pytest.mark.asyncio
-# async def test_toolbox_sync_tool_call_(toolbox_tool):
-#     async for tool in toolbox_tool:
-#         result = tool.invoke({"param1": "test-value", "param2": 123})
-#         assert result == {"result": "test-result"}
+@pytest.mark.asyncio
+async def test_toolbox_sync_tool_call(sync_toolbox_tool):
+    for tool in sync_toolbox_tool:
+        result = tool.invoke({"param1": "test-value", "param2": 123})
+        assert result == {"result": "test-result"}
 
 
 @pytest.mark.asyncio
