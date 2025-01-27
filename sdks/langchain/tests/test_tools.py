@@ -12,13 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import asyncio
+from threading import Thread
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 from pydantic import ValidationError
-from threading import Thread
 
-import asyncio
 from toolbox_langchain_sdk.background_loop import _BackgroundLoop
 from toolbox_langchain_sdk.tools import ToolboxTool
 
@@ -122,6 +122,7 @@ async def test_toolbox_tool_init(MockClientSession, tool_schema):
     assert tool.name == "test_tool"
     assert tool.description == "Test Tool Description"
 
+
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
     "params, expected_bound_params",
@@ -181,6 +182,7 @@ async def test_toolbox_tool_bind_params_invalid_params(auth_toolbox_tool):
             e.value
         )
 
+
 @pytest.mark.asyncio
 async def test_toolbox_tool_bind_param(toolbox_tool):
     async for tool in toolbox_tool:
@@ -214,6 +216,7 @@ async def test_toolbox_tool_bind_param_duplicate(toolbox_tool):
         assert "Parameter(s) `param1` already bound in tool `test_tool`." in str(
             e.value
         )
+
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
@@ -254,6 +257,7 @@ async def test_toolbox_tool_add_auth_tokens_duplicate(auth_toolbox_tool):
             "Authentication source(s) `test-auth-source` already registered in tool `test_tool`."
             in str(e.value)
         )
+
 
 @pytest.mark.asyncio
 async def test_toolbox_tool_add_auth_token(auth_toolbox_tool):
