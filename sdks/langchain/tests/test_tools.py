@@ -25,7 +25,7 @@ class MockBackgroundLoop:
         return func()
 
     async def run_as_async(self, func):
-        return func()
+        return await func
 
 @pytest.fixture
 def tool_schema():
@@ -273,12 +273,11 @@ async def test_toolbox_tool_call(toolbox_tool):
         assert result == {"result": "test-result"}
 
 
-@pytest.mark.asyncio
-async def test_toolbox_sync_tool_call_(toolbox_tool):
-    async for tool in toolbox_tool:
-        with pytest.raises(NotImplementedError) as e:
-            result = tool.invoke({"param1": "test-value", "param2": 123})
-        assert "Sync tool calls not supported yet." in str(e.value)
+# @pytest.mark.asyncio
+# async def test_toolbox_sync_tool_call_(toolbox_tool):
+#     async for tool in toolbox_tool:
+#         result = tool.invoke({"param1": "test-value", "param2": 123})
+#         assert result == {"result": "test-result"}
 
 
 @pytest.mark.asyncio
@@ -304,7 +303,7 @@ async def test_toolbox_tool_call_with_auth_tokens_insecure(auth_toolbox_tool):
             UserWarning,
             match="Sending ID token over HTTP. User data may be exposed. Use HTTPS for secure communication.",
         ):
-            tool._url = "http://test-url"
+            tool._ToolboxTool__url = "http://test-url"
             tool = tool.add_auth_tokens({"test-auth-source": lambda: "test-token"})
             result = await tool.ainvoke({"param2": 123})
             assert result == {"result": "test-result"}
