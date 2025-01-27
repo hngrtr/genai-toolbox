@@ -18,7 +18,14 @@ import pytest
 from pydantic import ValidationError
 
 from toolbox_langchain_sdk.tools import ToolboxTool
+from toolbox_langchain_sdk.utils import ToolSchema
 
+class MockBackgroundLoop:
+    def run_as_sync(self, func):
+        return func()
+
+    async def run_as_async(self, func):
+        return func()
 
 @pytest.fixture
 def tool_schema():
@@ -58,8 +65,9 @@ async def toolbox_tool(MockClientSession, tool_schema):
     tool = ToolboxTool(
         name="test_tool",
         schema=tool_schema,
-        url="https://test-url",
+        url="http://test_url",
         session=mock_session,
+        bg_loop=MockBackgroundLoop(),
     )
     yield tool
 
@@ -81,12 +89,13 @@ async def auth_toolbox_tool(MockClientSession, auth_tool_schema):
             schema=auth_tool_schema,
             url="https://test-url",
             session=mock_session,
+            bg_loop=MockBackgroundLoop(),
         )
     yield tool
 
 
 @pytest.mark.asyncio
-@patch("toolbox_langchain_sdk.client.ClientSession")
+@patch("aiohttp.ClientSession")
 async def test_toolbox_tool_init(MockClientSession, tool_schema):
     mock_session = MockClientSession.return_value
     tool = ToolboxTool(
@@ -97,7 +106,6 @@ async def test_toolbox_tool_init(MockClientSession, tool_schema):
     )
     assert tool.name == "test_tool"
     assert tool.description == "Test Tool Description"
-
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
@@ -116,9 +124,9 @@ async def test_toolbox_tool_bind_params(toolbox_tool, params, expected_bound_par
         tool = tool.bind_params(params)
         for key, value in expected_bound_params.items():
             if callable(value):
-                assert value() == tool._bound_params[key]()
+                assert value() == tool._ToolboxTool__bound_params[key]()
             else:
-                assert value == tool._bound_params[key]
+                assert value == tool._ToolboxTool__bound_params[key]
 
 
 @pytest.mark.asyncio
@@ -158,12 +166,11 @@ async def test_toolbox_tool_bind_params_invalid_params(auth_toolbox_tool):
             e.value
         )
 
-
 @pytest.mark.asyncio
 async def test_toolbox_tool_bind_param(toolbox_tool):
     async for tool in toolbox_tool:
         tool = tool.bind_param("param1", "bound-value")
-        assert tool._bound_params == {"param1": "bound-value"}
+        assert tool._ToolboxTool__bound_params == {"param1": "bound-value"}
 
 
 @pytest.mark.asyncio
@@ -193,7 +200,6 @@ async def test_toolbox_tool_bind_param_duplicate(toolbox_tool):
             e.value
         )
 
-
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
     "auth_tokens, expected_auth_tokens",
@@ -220,7 +226,7 @@ async def test_toolbox_tool_add_auth_tokens(
     async for tool in auth_toolbox_tool:
         tool = tool.add_auth_tokens(auth_tokens)
         for source, getter in expected_auth_tokens.items():
-            assert tool._auth_tokens[source]() == getter()
+            assert tool._ToolboxTool__auth_tokens[source]() == getter()
 
 
 @pytest.mark.asyncio
@@ -234,12 +240,11 @@ async def test_toolbox_tool_add_auth_tokens_duplicate(auth_toolbox_tool):
             in str(e.value)
         )
 
-
 @pytest.mark.asyncio
 async def test_toolbox_tool_add_auth_token(auth_toolbox_tool):
     async for tool in auth_toolbox_tool:
         tool = tool.add_auth_token("test-auth-source", lambda: "test-token")
-        assert tool._auth_tokens["test-auth-source"]() == "test-token"
+        assert tool._ToolboxTool__auth_tokens["test-auth-source"]() == "test-token"
 
 
 @pytest.mark.asyncio
