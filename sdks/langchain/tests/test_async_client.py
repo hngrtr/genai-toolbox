@@ -1,5 +1,4 @@
 import asyncio
-import json
 from unittest.mock import AsyncMock, patch
 from warnings import catch_warnings, simplefilter
 
@@ -73,7 +72,9 @@ class TestAsyncToolboxClient:
         await client._AsyncToolboxClient__session.close()  # Close to avoid warnings
 
     @patch("toolbox_langchain_sdk.async_client._load_manifest")
-    async def test_aload_tool(self, mock_load_manifest, mock_client, mock_session, manifest_schema):
+    async def test_aload_tool(
+        self, mock_load_manifest, mock_client, mock_session, manifest_schema
+    ):
         tool_name = "test_tool_1"
         mock_load_manifest.return_value = manifest_schema
 
@@ -120,7 +121,9 @@ class TestAsyncToolboxClient:
             assert "auth_headers" in str(w[-1].message)
 
     @patch("toolbox_langchain_sdk.async_client._load_manifest")
-    async def test_aload_toolset(self, mock_load_manifest, mock_client, mock_session, manifest_schema):
+    async def test_aload_toolset(
+        self, mock_load_manifest, mock_client, mock_session, manifest_schema
+    ):
         mock_manifest = manifest_schema
         mock_load_manifest.return_value = mock_manifest
         tools = await mock_client.aload_toolset()
