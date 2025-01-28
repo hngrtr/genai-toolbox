@@ -46,6 +46,9 @@ class MockBackgroundLoop:
 
 @pytest.mark.asyncio
 class TestAsyncToolboxClient:
+    @pytest.fixture()
+    def manifest_schema(self):
+        return ManifestSchema(**MANIFEST_JSON)
 
     @pytest.fixture()
     def mock_session(self):
@@ -70,9 +73,9 @@ class TestAsyncToolboxClient:
         await client._AsyncToolboxClient__session.close()  # Close to avoid warnings
 
     @patch("toolbox_langchain_sdk.async_client._load_manifest")
-    async def test_aload_tool(self, mock_load_manifest, mock_client, mock_session):
+    async def test_aload_tool(self, mock_load_manifest, mock_client, mock_session, manifest_schema):
         tool_name = "test_tool_1"
-        mock_load_manifest.return_value = ManifestSchema(**MANIFEST_JSON)
+        mock_load_manifest.return_value = manifest_schema
 
         tool = await mock_client.aload_tool(tool_name)
 
@@ -84,10 +87,10 @@ class TestAsyncToolboxClient:
 
     @patch("toolbox_langchain_sdk.async_client._load_manifest")
     async def test_aload_tool_auth_headers_deprecated(
-        self, mock_load_manifest, mock_client
+        self, mock_load_manifest, mock_client, manifest_schema
     ):
         tool_name = "test_tool_1"
-        mock_manifest = ManifestSchema(**MANIFEST_JSON)
+        mock_manifest = manifest_schema
         mock_load_manifest.return_value = mock_manifest
         with catch_warnings(record=True) as w:
             simplefilter("always")
@@ -100,10 +103,10 @@ class TestAsyncToolboxClient:
 
     @patch("toolbox_langchain_sdk.async_client._load_manifest")
     async def test_aload_tool_auth_headers_and_tokens(
-        self, mock_load_manifest, mock_client
+        self, mock_load_manifest, mock_client, manifest_schema
     ):
         tool_name = "test_tool_1"
-        mock_manifest = ManifestSchema(**MANIFEST_JSON)
+        mock_manifest = manifest_schema
         mock_load_manifest.return_value = mock_manifest
         with catch_warnings(record=True) as w:
             simplefilter("always")
@@ -117,8 +120,8 @@ class TestAsyncToolboxClient:
             assert "auth_headers" in str(w[-1].message)
 
     @patch("toolbox_langchain_sdk.async_client._load_manifest")
-    async def test_aload_toolset(self, mock_load_manifest, mock_client, mock_session):
-        mock_manifest = ManifestSchema(**MANIFEST_JSON)
+    async def test_aload_toolset(self, mock_load_manifest, mock_client, mock_session, manifest_schema):
+        mock_manifest = manifest_schema
         mock_load_manifest.return_value = mock_manifest
         tools = await mock_client.aload_toolset()
 
@@ -126,13 +129,14 @@ class TestAsyncToolboxClient:
         assert len(tools) == 2
         for tool in tools:
             assert isinstance(tool, ToolboxTool)
+            assert tool.name in ["test_tool_1", "test_tool_2"]
 
     @patch("toolbox_langchain_sdk.async_client._load_manifest")
     async def test_aload_toolset_with_toolset_name(
-        self, mock_load_manifest, mock_client, mock_session
+        self, mock_load_manifest, mock_client, mock_session, manifest_schema
     ):
         toolset_name = "test_toolset_1"
-        mock_manifest = ManifestSchema(**MANIFEST_JSON)
+        mock_manifest = manifest_schema
         mock_load_manifest.return_value = mock_manifest
         tools = await mock_client.aload_toolset(toolset_name=toolset_name)
 
@@ -142,12 +146,13 @@ class TestAsyncToolboxClient:
         assert len(tools) == 2
         for tool in tools:
             assert isinstance(tool, ToolboxTool)
+            assert tool.name in ["test_tool_1", "test_tool_2"]
 
     @patch("toolbox_langchain_sdk.async_client._load_manifest")
     async def test_aload_toolset_auth_headers_deprecated(
-        self, mock_load_manifest, mock_client
+        self, mock_load_manifest, mock_client, manifest_schema
     ):
-        mock_manifest = ManifestSchema(**MANIFEST_JSON)
+        mock_manifest = manifest_schema
         mock_load_manifest.return_value = mock_manifest
         with catch_warnings(record=True) as w:
             simplefilter("always")
@@ -160,9 +165,9 @@ class TestAsyncToolboxClient:
 
     @patch("toolbox_langchain_sdk.async_client._load_manifest")
     async def test_aload_toolset_auth_headers_and_tokens(
-        self, mock_load_manifest, mock_client
+        self, mock_load_manifest, mock_client, manifest_schema
     ):
-        mock_manifest = ManifestSchema(**MANIFEST_JSON)
+        mock_manifest = manifest_schema
         mock_load_manifest.return_value = mock_manifest
         with catch_warnings(record=True) as w:
             simplefilter("always")
