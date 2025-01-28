@@ -1,4 +1,5 @@
 import asyncio
+import json
 from unittest.mock import AsyncMock, patch
 from warnings import catch_warnings, simplefilter
 
@@ -8,7 +9,6 @@ from aiohttp import ClientSession
 from toolbox_langchain_sdk.async_client import AsyncToolboxClient
 from toolbox_langchain_sdk.tools import ToolboxTool
 from toolbox_langchain_sdk.utils import ManifestSchema
-import json
 
 URL = "http://test_url"
 MANIFEST_JSON = {
@@ -37,10 +37,12 @@ MANIFEST_JSON = {
     },
 }
 
+
 # Mock _BackgroundLoop for testing. A real one is needed for actual use.
 class MockBackgroundLoop:
     def run_async(self, coro):
         return asyncio.run(coro)
+
 
 @pytest.mark.asyncio
 class TestAsyncToolboxClient:
@@ -68,12 +70,10 @@ class TestAsyncToolboxClient:
         await client._AsyncToolboxClient__session.close()  # Close to avoid warnings
 
     @patch("toolbox_langchain_sdk.async_client._load_manifest")
-    async def test_aload_tool(
-        self, mock_load_manifest, mock_client, mock_session
-    ):
+    async def test_aload_tool(self, mock_load_manifest, mock_client, mock_session):
         tool_name = "test_tool_1"
         mock_load_manifest.return_value = ManifestSchema(**MANIFEST_JSON)
-        
+
         tool = await mock_client.aload_tool(tool_name)
 
         mock_load_manifest.assert_called_once_with(
@@ -83,29 +83,39 @@ class TestAsyncToolboxClient:
         assert tool.name == tool_name
 
     @patch("toolbox_langchain_sdk.async_client._load_manifest")
-    async def test_aload_tool_auth_headers_deprecated(self, mock_load_manifest, mock_client):
+    async def test_aload_tool_auth_headers_deprecated(
+        self, mock_load_manifest, mock_client
+    ):
         tool_name = "test_tool_1"
         mock_manifest = ManifestSchema(**MANIFEST_JSON)
         mock_load_manifest.return_value = mock_manifest
         with catch_warnings(record=True) as w:
             simplefilter("always")
-            await mock_client.aload_tool(tool_name, auth_headers={"Authorization": lambda: "Bearer token"})
+            await mock_client.aload_tool(
+                tool_name, auth_headers={"Authorization": lambda: "Bearer token"}
+            )
             assert len(w) == 1
             assert issubclass(w[-1].category, DeprecationWarning)
             assert "auth_headers" in str(w[-1].message)
 
     @patch("toolbox_langchain_sdk.async_client._load_manifest")
-    async def test_aload_tool_auth_headers_and_tokens(self, mock_load_manifest, mock_client):
+    async def test_aload_tool_auth_headers_and_tokens(
+        self, mock_load_manifest, mock_client
+    ):
         tool_name = "test_tool_1"
         mock_manifest = ManifestSchema(**MANIFEST_JSON)
         mock_load_manifest.return_value = mock_manifest
         with catch_warnings(record=True) as w:
             simplefilter("always")
-            await mock_client.aload_tool(tool_name, auth_headers={"Authorization": lambda: "Bearer token"}, auth_tokens={"test": lambda: "token"})
+            await mock_client.aload_tool(
+                tool_name,
+                auth_headers={"Authorization": lambda: "Bearer token"},
+                auth_tokens={"test": lambda: "token"},
+            )
             assert len(w) == 1
             assert issubclass(w[-1].category, DeprecationWarning)
             assert "auth_headers" in str(w[-1].message)
-    
+
     @patch("toolbox_langchain_sdk.async_client._load_manifest")
     async def test_aload_toolset(self, mock_load_manifest, mock_client, mock_session):
         mock_manifest = ManifestSchema(**MANIFEST_JSON)
@@ -116,37 +126,50 @@ class TestAsyncToolboxClient:
         assert len(tools) == 2
         for tool in tools:
             assert isinstance(tool, ToolboxTool)
-    
+
     @patch("toolbox_langchain_sdk.async_client._load_manifest")
-    async def test_aload_toolset_with_toolset_name(self, mock_load_manifest, mock_client, mock_session):
+    async def test_aload_toolset_with_toolset_name(
+        self, mock_load_manifest, mock_client, mock_session
+    ):
         toolset_name = "test_toolset_1"
         mock_manifest = ManifestSchema(**MANIFEST_JSON)
         mock_load_manifest.return_value = mock_manifest
         tools = await mock_client.aload_toolset(toolset_name=toolset_name)
 
-        mock_load_manifest.assert_called_once_with(f"{URL}/api/toolset/{toolset_name}", mock_session)
+        mock_load_manifest.assert_called_once_with(
+            f"{URL}/api/toolset/{toolset_name}", mock_session
+        )
         assert len(tools) == 2
         for tool in tools:
             assert isinstance(tool, ToolboxTool)
 
     @patch("toolbox_langchain_sdk.async_client._load_manifest")
-    async def test_aload_toolset_auth_headers_deprecated(self, mock_load_manifest, mock_client):
+    async def test_aload_toolset_auth_headers_deprecated(
+        self, mock_load_manifest, mock_client
+    ):
         mock_manifest = ManifestSchema(**MANIFEST_JSON)
         mock_load_manifest.return_value = mock_manifest
         with catch_warnings(record=True) as w:
             simplefilter("always")
-            await mock_client.aload_toolset(auth_headers={"Authorization": lambda: "Bearer token"})
+            await mock_client.aload_toolset(
+                auth_headers={"Authorization": lambda: "Bearer token"}
+            )
             assert len(w) == 1
             assert issubclass(w[-1].category, DeprecationWarning)
             assert "auth_headers" in str(w[-1].message)
 
     @patch("toolbox_langchain_sdk.async_client._load_manifest")
-    async def test_aload_toolset_auth_headers_and_tokens(self, mock_load_manifest, mock_client):
+    async def test_aload_toolset_auth_headers_and_tokens(
+        self, mock_load_manifest, mock_client
+    ):
         mock_manifest = ManifestSchema(**MANIFEST_JSON)
         mock_load_manifest.return_value = mock_manifest
         with catch_warnings(record=True) as w:
             simplefilter("always")
-            await mock_client.aload_toolset(auth_headers={"Authorization": lambda: "Bearer token"}, auth_tokens={"test": lambda: "token"})
+            await mock_client.aload_toolset(
+                auth_headers={"Authorization": lambda: "Bearer token"},
+                auth_tokens={"test": lambda: "token"},
+            )
             assert len(w) == 1
             assert issubclass(w[-1].category, DeprecationWarning)
             assert "auth_headers" in str(w[-1].message)
@@ -154,12 +177,16 @@ class TestAsyncToolboxClient:
     async def test_load_tool_not_implemented(self, mock_client):
         with pytest.raises(NotImplementedError) as excinfo:
             mock_client.load_tool("test_tool")
-        assert "You can use the ToolboxClient to call synchronous methods." in str(excinfo.value)
+        assert "You can use the ToolboxClient to call synchronous methods." in str(
+            excinfo.value
+        )
 
     async def test_load_toolset_not_implemented(self, mock_client):
         with pytest.raises(NotImplementedError) as excinfo:
             mock_client.load_toolset()
-        assert "You can use the ToolboxClient to call synchronous methods." in str(excinfo.value)
+        assert "You can use the ToolboxClient to call synchronous methods." in str(
+            excinfo.value
+        )
 
     async def test_constructor_direct_access_raises_exception(self):
         with pytest.raises(Exception) as excinfo:
