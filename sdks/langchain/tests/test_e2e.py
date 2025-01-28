@@ -41,21 +41,60 @@ from pydantic import ValidationError
 
 from toolbox_langchain_sdk.client import ToolboxClient
 
+@pytest.mark.usefixtures("toolbox_server")
+class TestE2EClientSync:
+    @pytest.fixture(scope="function")
+    def toolbox(self):
+        """Provides a ToolboxClient instance for each test."""
+        toolbox = ToolboxClient.create(url="http://localhost:5000")
+        return toolbox
+
+    def test_load_tool(self, toolbox):
+        tool = toolbox.load_tool("get-n-rows")
+        response = tool.invoke({"num_rows": "2"})
+        result = response["result"]
+
+        assert "row1" in result
+        assert "row2" in result
+        assert "row3" not in result
+
+    def test_load_toolset_specific(self, toolbox):
+        toolset = toolbox.load_toolset("my-toolset")
+        assert len(toolset) == 1
+        assert toolset[0].name == "get-row-by-id"
+
+        toolset = toolbox.load_toolset("my-toolset-2")
+        assert len(toolset) == 2
+        tool_names = ["get-n-rows", "get-row-by-id"]
+        assert toolset[0].name in tool_names
+        assert toolset[1].name in tool_names
+
+    def test_load_toolset_all(self, toolbox):
+        toolset = toolbox.load_toolset()
+        assert len(toolset) == 5
+        tool_names = [
+            "get-n-rows",
+            "get-row-by-id",
+            "get-row-by-id-auth",
+            "get-row-by-email-auth",
+            "get-row-by-content-auth",
+        ]
+        for tool in toolset:
+            assert tool.name in tool_names
+
 
 @pytest.mark.asyncio
 @pytest.mark.usefixtures("toolbox_server")
-class TestE2EClient:
+class TestE2EClientAsync:
     @pytest_asyncio.fixture(scope="function")
-    async def toolbox(self):
+    def toolbox(self):
         """Provides a ToolboxClient instance for each test."""
-        toolbox = ToolboxClient("http://localhost:5000")
-        yield toolbox
-        await toolbox.close()
+        toolbox = ToolboxClient.create(url="http://localhost:5000")
+        return toolbox
 
     #### Basic e2e tests
-    @pytest.mark.asyncio
     async def test_load_tool(self, toolbox):
-        tool = await toolbox.load_tool("get-n-rows")
+        tool = await toolbox.aload_tool("get-n-rows")
         response = await tool.ainvoke({"num_rows": "2"})
         result = response["result"]
 
@@ -65,11 +104,11 @@ class TestE2EClient:
 
     @pytest.mark.asyncio
     async def test_load_toolset_specific(self, toolbox):
-        toolset = await toolbox.load_toolset("my-toolset")
+        toolset = await toolbox.aload_toolset("my-toolset")
         assert len(toolset) == 1
         assert toolset[0].name == "get-row-by-id"
 
-        toolset = await toolbox.load_toolset("my-toolset-2")
+        toolset = await toolbox.aload_toolset("my-toolset-2")
         assert len(toolset) == 2
         tool_names = ["get-n-rows", "get-row-by-id"]
         assert toolset[0].name in tool_names
@@ -77,7 +116,7 @@ class TestE2EClient:
 
     @pytest.mark.asyncio
     async def test_load_toolset_all(self, toolbox):
-        toolset = await toolbox.load_toolset()
+        toolset = await toolbox.aload_toolset()
         assert len(toolset) == 5
         tool_names = [
             "get-n-rows",
@@ -91,84 +130,95 @@ class TestE2EClient:
 
     @pytest.mark.asyncio
     async def test_run_tool_missing_params(self, toolbox):
-        tool = await toolbox.load_tool("get-n-rows")
+        tool = await toolbox.aload_tool("get-n-rows")
         with pytest.raises(ValidationError, match="Field required"):
             await tool.ainvoke({})
 
     @pytest.mark.asyncio
     async def test_run_tool_wrong_param_type(self, toolbox):
-        tool = await toolbox.load_tool("get-n-rows")
+        tool = await toolbox.aload_tool("get-n-rows")
         with pytest.raises(ValidationError, match="Input should be a valid string"):
             await tool.ainvoke({"num_rows": 2})
 
+@pytest.mark.usefixtures("toolbox_server")
+class TestClientRunTool:
+    @pytest_asyncio.fixture(scope="function")
+    def toolbox(self):
+        """Provides a ToolboxClient instance for each test."""
+        toolbox = ToolboxClient.create(url="http://localhost:5000")
+        return toolbox
+
+    def test_run_tool_missing_params(self, toolbox):
+        tool = toolbox.load_tool("get-n-rows")
+        with pytest.raises(ValidationError, match="Field required"):
+            tool.invoke({})
+
+    def test_run_tool_wrong_param_type(self, toolbox):
+        tool = toolbox.load_tool("get-n-rows")
+        with pytest.raises(ValidationError, match="Input should be a valid string"):
+            tool.invoke({"num_rows": 2})
+
     ##### Auth tests
-    @pytest.mark.asyncio
     @pytest.mark.skip(reason="b/389574566")
-    async def test_run_tool_unauth_with_auth(self, toolbox, auth_token2):
+    def test_run_tool_unauth_with_auth(self, toolbox, auth_token2):
         """Tests running a tool that doesn't require auth, with auth provided."""
-        tool = await toolbox.load_tool(
+        tool = toolbox.load_tool(
             "get-row-by-id", auth_tokens={"my-test-auth": lambda: auth_token2}
         )
-        response = await tool.ainvoke({"id": "2"})
+        response = tool.invoke({"id": "2"})
         assert "row2" in response["result"]
 
-    @pytest.mark.asyncio
-    async def test_run_tool_no_auth(self, toolbox):
+    def test_run_tool_no_auth(self, toolbox):
         """Tests running a tool requiring auth without providing auth."""
-        tool = await toolbox.load_tool(
+        tool = toolbox.load_tool(
             "get-row-by-id-auth",
         )
         with pytest.raises(ClientResponseError, match="401, message='Unauthorized'"):
-            await tool.ainvoke({"id": "2"})
+            tool.invoke({"id": "2"})
 
-    @pytest.mark.asyncio
-    async def test_run_tool_wrong_auth(self, toolbox, auth_token2):
+    def test_run_tool_wrong_auth(self, toolbox, auth_token2):
         """Tests running a tool with incorrect auth."""
-        tool = await toolbox.load_tool(
+        tool = toolbox.load_tool(
             "get-row-by-id-auth",
         )
         auth_tool = tool.add_auth_token("my-test-auth", lambda: auth_token2)
         # TODO: Fix error message (b/389577313)
         with pytest.raises(ClientResponseError, match="400, message='Bad Request'"):
-            await auth_tool.ainvoke({"id": "2"})
+            auth_tool.invoke({"id": "2"})
 
-    @pytest.mark.asyncio
-    async def test_run_tool_auth(self, toolbox, auth_token1):
+    def test_run_tool_auth(self, toolbox, auth_token1):
         """Tests running a tool with correct auth."""
-        tool = await toolbox.load_tool(
+        tool = toolbox.load_tool(
             "get-row-by-id-auth",
         )
         auth_tool = tool.add_auth_token("my-test-auth", lambda: auth_token1)
-        response = await auth_tool.ainvoke({"id": "2"})
+        response = auth_tool.invoke({"id": "2"})
         assert "row2" in response["result"]
 
-    @pytest.mark.asyncio
-    async def test_run_tool_param_auth_no_auth(self, toolbox):
+    def test_run_tool_param_auth_no_auth(self, toolbox):
         """Tests running a tool with a param requiring auth, without auth."""
-        tool = await toolbox.load_tool("get-row-by-email-auth")
+        tool = toolbox.load_tool("get-row-by-email-auth")
         with pytest.raises(
             PermissionError,
             match="Parameter\(s\) `email` of tool get-row-by-email-auth require authentication\, but no valid authentication sources are registered\. Please register the required sources before use\.",
         ):
-            await tool.ainvoke({})
+            tool.invoke({})
 
-    @pytest.mark.asyncio
-    async def test_run_tool_param_auth(self, toolbox, auth_token1):
+    def test_run_tool_param_auth(self, toolbox, auth_token1):
         """Tests running a tool with a param requiring auth, with correct auth."""
-        tool = await toolbox.load_tool(
+        tool = toolbox.load_tool(
             "get-row-by-email-auth", auth_tokens={"my-test-auth": lambda: auth_token1}
         )
-        response = await tool.ainvoke({})
+        response = tool.invoke({})
         result = response["result"]
         assert "row4" in result
         assert "row5" in result
         assert "row6" in result
 
-    @pytest.mark.asyncio
-    async def test_run_tool_param_auth_no_field(self, toolbox, auth_token1):
+    def test_run_tool_param_auth_no_field(self, toolbox, auth_token1):
         """Tests running a tool with a param requiring auth, with insufficient auth."""
-        tool = await toolbox.load_tool(
+        tool = toolbox.load_tool(
             "get-row-by-content-auth", auth_tokens={"my-test-auth": lambda: auth_token1}
         )
         with pytest.raises(ClientResponseError, match="400, message='Bad Request'"):
-            await tool.ainvoke({})
+            tool.invoke({})
