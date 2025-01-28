@@ -41,6 +41,7 @@ from pydantic import ValidationError
 
 from toolbox_langchain_sdk.client import ToolboxClient
 
+
 @pytest.mark.usefixtures("toolbox_server")
 class TestE2EClientSync:
     @pytest.fixture(scope="function")
@@ -139,6 +140,7 @@ class TestE2EClientAsync:
         tool = await toolbox.aload_tool("get-n-rows")
         with pytest.raises(ValidationError, match="Input should be a valid string"):
             await tool.ainvoke({"num_rows": 2})
+
 
 @pytest.mark.usefixtures("toolbox_server")
 class TestClientRunTool:
