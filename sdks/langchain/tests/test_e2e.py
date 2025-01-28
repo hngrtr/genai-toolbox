@@ -44,7 +44,7 @@ from toolbox_langchain_sdk.client import ToolboxClient
 
 @pytest.mark.usefixtures("toolbox_server")
 class TestE2EClientSync:
-    @pytest.fixture(scope="function")
+    @pytest.fixture(scope="class")
     def toolbox(self):
         """Provides a ToolboxClient instance for each test."""
         toolbox = ToolboxClient.create(url="http://localhost:5000")
@@ -87,7 +87,7 @@ class TestE2EClientSync:
 @pytest.mark.asyncio
 @pytest.mark.usefixtures("toolbox_server")
 class TestE2EClientAsync:
-    @pytest_asyncio.fixture(scope="function")
+    @pytest_asyncio.fixture(scope="class")
     def toolbox(self):
         """Provides a ToolboxClient instance for each test."""
         toolbox = ToolboxClient.create(url="http://localhost:5000")
@@ -144,7 +144,7 @@ class TestE2EClientAsync:
 
 @pytest.mark.usefixtures("toolbox_server")
 class TestClientRunTool:
-    @pytest_asyncio.fixture(scope="function")
+    @pytest_asyncio.fixture(scope="class")
     def toolbox(self):
         """Provides a ToolboxClient instance for each test."""
         toolbox = ToolboxClient.create(url="http://localhost:5000")
