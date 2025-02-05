@@ -129,7 +129,7 @@ def _parse_type(type_: str) -> Any:
     elif type_ == "boolean":
         return bool
     elif type_ == "array":
-        return list
+        return list[str, int, float, bool]
     else:
         raise ValueError(f"Unsupported schema type: {type_}")
 
