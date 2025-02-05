@@ -195,7 +195,8 @@ class AsyncToolboxTool(BaseTool):
 
         # Check each parameter for at least 1 required auth source
         for param in self.__auth_params:
-            assert param.authSources is not None
+            if not param.authSources:
+                raise ValueError("Auth sources cannot be None.")
             has_auth = False
             for src in param.authSources:
 

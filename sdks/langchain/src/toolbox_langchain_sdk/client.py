@@ -61,6 +61,8 @@ class ToolboxClient:
 
         asyncio.run_coroutine_threadsafe(coro, ToolboxClient.__loop).result()
 
+        if not ToolboxClient.__session:
+            raise ValueError("Session cannot be None.")
         self.__async_client = AsyncToolboxClient(url, ToolboxClient.__session)
 
     def __run_as_sync(self, coro: Awaitable[T]) -> T:
@@ -114,6 +116,8 @@ class ToolboxClient:
             )
         )
 
+        if not self.__loop or not self.__thread:
+            raise ValueError("Background loop or thread cannot be None.")
         return ToolboxTool(async_tool, self.__loop, self.__thread)
 
     async def aload_toolset(
@@ -150,6 +154,9 @@ class ToolboxClient:
         )
 
         tools: list[ToolboxTool] = []
+
+        if not self.__loop or not self.__thread:
+            raise ValueError("Background loop or thread cannot be None.")
         for async_tool in async_tools:
             tools.append(ToolboxTool(async_tool, self.__loop, self.__thread))
         return tools
@@ -185,6 +192,8 @@ class ToolboxClient:
             )
         )
 
+        if not self.__loop or not self.__thread:
+            raise ValueError("Background loop or thread cannot be None.")
         return ToolboxTool(async_tool, self.__loop, self.__thread)
 
     def load_toolset(
@@ -220,6 +229,8 @@ class ToolboxClient:
             )
         )
 
+        if not self.__loop or not self.__thread:
+            raise ValueError("Background loop or thread cannot be None.")
         tools: list[ToolboxTool] = []
         for async_tool in async_tools:
             tools.append(ToolboxTool(async_tool, self.__loop, self.__thread))
