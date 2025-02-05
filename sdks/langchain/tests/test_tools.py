@@ -130,25 +130,28 @@ class TestToolboxTool:
         assert isinstance(tool, ToolboxTool)
 
         for key, value in expected_bound_params.items():
-            async_tool_bound_param_val = tool._ToolboxTool__async_tool._AsyncToolboxTool__bound_params[
-                key
-            ]
+            async_tool_bound_param_val = (
+                tool._ToolboxTool__async_tool._AsyncToolboxTool__bound_params[key]
+            )
             if callable(value):
                 assert value() == async_tool_bound_param_val()
             else:
                 assert value == async_tool_bound_param_val
 
-    def test_toolbox_tool_bind_param(
-        self, mock_async_tool, toolbox_tool
-    ):
+    def test_toolbox_tool_bind_param(self, mock_async_tool, toolbox_tool):
         expected_bound_param = {"param1": "bound-value"}
         mock_async_tool._AsyncToolboxTool__bound_params = expected_bound_param
         mock_async_tool.bind_param.return_value = mock_async_tool
 
         tool = toolbox_tool.bind_param("param1", "bound-value")
-        mock_async_tool.bind_param.assert_called_once_with("param1", "bound-value", True)
+        mock_async_tool.bind_param.assert_called_once_with(
+            "param1", "bound-value", True
+        )
 
-        assert tool._ToolboxTool__async_tool._AsyncToolboxTool__bound_params == expected_bound_param
+        assert (
+            tool._ToolboxTool__async_tool._AsyncToolboxTool__bound_params
+            == expected_bound_param
+        )
         assert isinstance(tool, ToolboxTool)
 
     @pytest.mark.parametrize(
@@ -177,22 +180,31 @@ class TestToolboxTool:
         mock_async_auth_tool,
         auth_toolbox_tool,
     ):
-        auth_toolbox_tool._ToolboxTool__async_tool._AsyncToolboxTool__auth_tokens = expected_auth_tokens
-        auth_toolbox_tool._ToolboxTool__async_tool.add_auth_tokens.return_value = mock_async_auth_tool
+        auth_toolbox_tool._ToolboxTool__async_tool._AsyncToolboxTool__auth_tokens = (
+            expected_auth_tokens
+        )
+        auth_toolbox_tool._ToolboxTool__async_tool.add_auth_tokens.return_value = (
+            mock_async_auth_tool
+        )
 
         tool = auth_toolbox_tool.add_auth_tokens(auth_tokens)
         mock_async_auth_tool.add_auth_tokens.assert_called_once_with(auth_tokens, True)
         for source, getter in expected_auth_tokens.items():
-            assert tool._ToolboxTool__async_tool._AsyncToolboxTool__auth_tokens[source]() == getter()
+            assert (
+                tool._ToolboxTool__async_tool._AsyncToolboxTool__auth_tokens[source]()
+                == getter()
+            )
         assert isinstance(tool, ToolboxTool)
 
-    def test_toolbox_tool_add_auth_token(
-        self, mock_async_auth_tool, auth_toolbox_tool
-    ):
+    def test_toolbox_tool_add_auth_token(self, mock_async_auth_tool, auth_toolbox_tool):
         get_id_token = lambda: "test-token"
         expected_auth_tokens = {"test-auth-source": get_id_token}
-        auth_toolbox_tool._ToolboxTool__async_tool._AsyncToolboxTool__auth_tokens = expected_auth_tokens
-        auth_toolbox_tool._ToolboxTool__async_tool.add_auth_token.return_value = mock_async_auth_tool
+        auth_toolbox_tool._ToolboxTool__async_tool._AsyncToolboxTool__auth_tokens = (
+            expected_auth_tokens
+        )
+        auth_toolbox_tool._ToolboxTool__async_tool.add_auth_token.return_value = (
+            mock_async_auth_tool
+        )
 
         tool = auth_toolbox_tool.add_auth_token("test-auth-source", get_id_token)
         mock_async_auth_tool.add_auth_token.assert_called_once_with(
@@ -200,15 +212,19 @@ class TestToolboxTool:
         )
 
         assert (
-            tool._ToolboxTool__async_tool._AsyncToolboxTool__auth_tokens["test-auth-source"]()
+            tool._ToolboxTool__async_tool._AsyncToolboxTool__auth_tokens[
+                "test-auth-source"
+            ]()
             == "test-token"
         )
         assert isinstance(tool, ToolboxTool)
 
     def test_toolbox_tool_validate_auth_strict(self, auth_toolbox_tool):
-        auth_toolbox_tool._ToolboxTool__async_tool._arun = Mock(side_effect=PermissionError(
-            "Parameter(s) `param1` of tool test_tool require authentication"
-        ))
+        auth_toolbox_tool._ToolboxTool__async_tool._arun = Mock(
+            side_effect=PermissionError(
+                "Parameter(s) `param1` of tool test_tool require authentication"
+            )
+        )
         with pytest.raises(PermissionError) as e:
             auth_toolbox_tool._run()
         assert "Parameter(s) `param1` of tool test_tool require authentication" in str(

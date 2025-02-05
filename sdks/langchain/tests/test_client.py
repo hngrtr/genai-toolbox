@@ -13,9 +13,9 @@
 # limitations under the License.
 
 from unittest.mock import Mock, patch
-from pydantic import BaseModel
 
 import pytest
+from pydantic import BaseModel
 
 from toolbox_langchain_sdk.client import ToolboxClient
 from toolbox_langchain_sdk.tools import ToolboxTool
@@ -39,8 +39,8 @@ class TestToolboxClient:
     @patch("toolbox_langchain_sdk.client.AsyncToolboxClient.aload_tool")
     def test_load_tool(self, mock_aload_tool, toolbox_client):
         mock_tool = Mock(spec=ToolboxTool)
-        mock_tool.name="mock-tool"
-        mock_tool.description="mock description"
+        mock_tool.name = "mock-tool"
+        mock_tool.description = "mock description"
         mock_tool.args_schema = BaseModel
         mock_aload_tool.return_value = mock_tool
 
@@ -54,25 +54,30 @@ class TestToolboxClient:
     @patch("toolbox_langchain_sdk.client.AsyncToolboxClient.aload_toolset")
     def test_load_toolset(self, mock_aload_toolset, toolbox_client):
         mock_tools = [Mock(spec=ToolboxTool), Mock(spec=ToolboxTool)]
-        mock_tools[0].name="mock-tool-0"
-        mock_tools[0].description="mock description 0"
+        mock_tools[0].name = "mock-tool-0"
+        mock_tools[0].description = "mock description 0"
         mock_tools[0].args_schema = BaseModel
-        mock_tools[1].name="mock-tool-1"
-        mock_tools[1].description="mock description 1"
+        mock_tools[1].name = "mock-tool-1"
+        mock_tools[1].description = "mock description 1"
         mock_tools[1].args_schema = BaseModel
         mock_aload_toolset.return_value = mock_tools
 
         tools = toolbox_client.load_toolset()
         assert len(tools) == len(mock_tools)
-        assert all(a.name == b.name and a.description == b.description and a.args_schema == b.args_schema for a,b in zip(tools, mock_tools))
+        assert all(
+            a.name == b.name
+            and a.description == b.description
+            and a.args_schema == b.args_schema
+            for a, b in zip(tools, mock_tools)
+        )
         mock_aload_toolset.assert_called_once_with(None, {}, None, {}, True)
 
     @pytest.mark.asyncio
     @patch("toolbox_langchain_sdk.client.AsyncToolboxClient.aload_tool")
     async def test_aload_tool(self, mock_aload_tool, toolbox_client):
         mock_tool = Mock(spec=ToolboxTool)
-        mock_tool.name="mock-tool"
-        mock_tool.description="mock description"
+        mock_tool.name = "mock-tool"
+        mock_tool.description = "mock description"
         mock_tool.args_schema = BaseModel
         mock_aload_tool.return_value = mock_tool
 
@@ -86,24 +91,29 @@ class TestToolboxClient:
     @patch("toolbox_langchain_sdk.client.AsyncToolboxClient.aload_toolset")
     async def test_aload_toolset(self, mock_aload_toolset, toolbox_client):
         mock_tools = [Mock(spec=ToolboxTool), Mock(spec=ToolboxTool)]
-        mock_tools[0].name="mock-tool-0"
-        mock_tools[0].description="mock description 0"
+        mock_tools[0].name = "mock-tool-0"
+        mock_tools[0].description = "mock description 0"
         mock_tools[0].args_schema = BaseModel
-        mock_tools[1].name="mock-tool-1"
-        mock_tools[1].description="mock description 1"
+        mock_tools[1].name = "mock-tool-1"
+        mock_tools[1].description = "mock description 1"
         mock_tools[1].args_schema = BaseModel
         mock_aload_toolset.return_value = mock_tools
 
         tools = await toolbox_client.aload_toolset()
         assert len(tools) == len(mock_tools)
-        assert all(a.name == b.name and a.description == b.description and a.args_schema == b.args_schema for a,b in zip(tools, mock_tools))
+        assert all(
+            a.name == b.name
+            and a.description == b.description
+            and a.args_schema == b.args_schema
+            for a, b in zip(tools, mock_tools)
+        )
         mock_aload_toolset.assert_called_once_with(None, {}, None, {}, True)
 
     @patch("toolbox_langchain_sdk.client.AsyncToolboxClient.aload_tool")
     def test_load_tool_with_args(self, mock_aload_tool, toolbox_client):
         mock_tool = Mock(spec=ToolboxTool)
-        mock_tool.name="mock-tool"
-        mock_tool.description="mock description"
+        mock_tool.name = "mock-tool"
+        mock_tool.description = "mock description"
         mock_tool.args_schema = BaseModel
         mock_aload_tool.return_value = mock_tool
         auth_tokens = {"token1": lambda: "value1"}
@@ -128,11 +138,11 @@ class TestToolboxClient:
     @patch("toolbox_langchain_sdk.client.AsyncToolboxClient.aload_toolset")
     def test_load_toolset_with_args(self, mock_aload_toolset, toolbox_client):
         mock_tools = [Mock(spec=ToolboxTool), Mock(spec=ToolboxTool)]
-        mock_tools[0].name="mock-tool-0"
-        mock_tools[0].description="mock description 0"
+        mock_tools[0].name = "mock-tool-0"
+        mock_tools[0].description = "mock description 0"
         mock_tools[0].args_schema = BaseModel
-        mock_tools[1].name="mock-tool-1"
-        mock_tools[1].description="mock description 1"
+        mock_tools[1].name = "mock-tool-1"
+        mock_tools[1].description = "mock description 1"
         mock_tools[1].args_schema = BaseModel
         mock_aload_toolset.return_value = mock_tools
 
@@ -149,7 +159,12 @@ class TestToolboxClient:
         )
 
         assert len(tools) == len(mock_tools)
-        assert all(a.name == b.name and a.description == b.description and a.args_schema == b.args_schema for a,b in zip(tools, mock_tools))
+        assert all(
+            a.name == b.name
+            and a.description == b.description
+            and a.args_schema == b.args_schema
+            for a, b in zip(tools, mock_tools)
+        )
         mock_aload_toolset.assert_called_once_with(
             "my_toolset", auth_tokens, auth_headers, bound_params, False
         )
@@ -158,8 +173,8 @@ class TestToolboxClient:
     @patch("toolbox_langchain_sdk.client.AsyncToolboxClient.aload_tool")
     async def test_aload_tool_with_args(self, mock_aload_tool, toolbox_client):
         mock_tool = Mock(spec=ToolboxTool)
-        mock_tool.name="mock-tool"
-        mock_tool.description="mock description"
+        mock_tool.name = "mock-tool"
+        mock_tool.description = "mock description"
         mock_tool.args_schema = BaseModel
         mock_aload_tool.return_value = mock_tool
 
@@ -181,11 +196,11 @@ class TestToolboxClient:
     @patch("toolbox_langchain_sdk.client.AsyncToolboxClient.aload_toolset")
     async def test_aload_toolset_with_args(self, mock_aload_toolset, toolbox_client):
         mock_tools = [Mock(spec=ToolboxTool), Mock(spec=ToolboxTool)]
-        mock_tools[0].name="mock-tool-0"
-        mock_tools[0].description="mock description 0"
+        mock_tools[0].name = "mock-tool-0"
+        mock_tools[0].description = "mock description 0"
         mock_tools[0].args_schema = BaseModel
-        mock_tools[1].name="mock-tool-1"
-        mock_tools[1].description="mock description 1"
+        mock_tools[1].name = "mock-tool-1"
+        mock_tools[1].description = "mock description 1"
         mock_tools[1].args_schema = BaseModel
         mock_aload_toolset.return_value = mock_tools
 
@@ -197,7 +212,12 @@ class TestToolboxClient:
             "my_toolset", auth_tokens, auth_headers, bound_params, False
         )
         assert len(tools) == len(mock_tools)
-        assert all(a.name == b.name and a.description == b.description and a.args_schema == b.args_schema for a,b in zip(tools, mock_tools))
+        assert all(
+            a.name == b.name
+            and a.description == b.description
+            and a.args_schema == b.args_schema
+            for a, b in zip(tools, mock_tools)
+        )
         mock_aload_toolset.assert_called_once_with(
             "my_toolset", auth_tokens, auth_headers, bound_params, False
         )
