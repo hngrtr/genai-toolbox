@@ -49,7 +49,7 @@ class ToolboxClient:
             ToolboxClient.__thread = thread
             ToolboxClient.__loop = loop
 
-        async def __start_session(url: str) -> None:
+        async def __start_session() -> None:
 
             # Use a default session if none is provided. This leverages connection
             # pooling for better performance by reusing a single session throughout
@@ -57,9 +57,8 @@ class ToolboxClient:
             if ToolboxClient.__session is None:
                 ToolboxClient.__session = ClientSession()
 
-        coro = __start_session(url)
+        coro = __start_session()
 
-        assert ToolboxClient.__loop
         asyncio.run_coroutine_threadsafe(coro, ToolboxClient.__loop).result()
 
         self.__async_client = AsyncToolboxClient(url, ToolboxClient.__session)
